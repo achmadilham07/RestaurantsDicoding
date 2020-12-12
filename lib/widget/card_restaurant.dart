@@ -1,9 +1,9 @@
-import 'package:RestaurantsDicoding/data/restaurant.dart';
+import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/ui/detail_restaurant_screen.dart';
 import 'package:flutter/material.dart';
 
 class RestaurantCard extends StatelessWidget {
-  final RestaurantElement item;
+  final Restaurant item;
 
   const RestaurantCard({
     Key key,
@@ -22,7 +22,7 @@ class RestaurantCard extends StatelessWidget {
         child: Container(
           child: FadeInImage.assetNetwork(
             fit: BoxFit.cover,
-            image: item.pictureId,
+            image: item.getPictureLink(),
             placeholder: "images/food-store.png",
           ),
           constraints: BoxConstraints(maxWidth: 100, minWidth: 100),

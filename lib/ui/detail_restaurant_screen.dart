@@ -1,27 +1,73 @@
-import 'package:RestaurantsDicoding/data/restaurant.dart';
+import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
+import 'package:RestaurantsDicoding/data/service/api_config.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
-class DetailRestaurant extends StatelessWidget {
+class DetailRestaurant extends StatefulWidget {
   static const routeName = '/detail_restaurant';
-  final RestaurantElement item;
+  final Restaurant itemId;
 
-  DetailRestaurant({Key key, this.item}) : super(key: key);
+  DetailRestaurant({Key key, this.itemId}) : super(key: key);
 
+  @override
+  _DetailRestaurantState createState() => _DetailRestaurantState();
+}
+
+class _DetailRestaurantState extends State<DetailRestaurant> {
+  //
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  Future<RestaurantDetail> _restaurantDetail;
+  Restaurant _restaurantData = Restaurant();
+  bool isAndroid = true;
+
+  @override
+  void initState() {
+    _restaurantDetail = ApiConfig().getDetailRestaurant(widget.itemId.id);
+    _restaurantDetail.then((data) {
+      setState(() {
+        _restaurantData = data.restaurant;
+      });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return _buildAndroid();
+        isAndroid = false;
+        return _buildIos();
       case TargetPlatform.iOS:
+        isAndroid = false;
         return _buildIos();
       default:
         return _buildAndroid();
     }
+  }
+
+  Widget _futureBuilder() {
+    return FutureBuilder(
+      future: _restaurantDetail,
+      builder: (context, AsyncSnapshot<RestaurantDetail> snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text("${snapshot.error}"));
+        }
+
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        var restaurantData = snapshot.data;
+        if (!restaurantData.error) {
+          return _mainBody();
+        } else {
+          return Center(child: Text("No Restaurant that you want"));
+        }
+      },
+    );
   }
 
   CupertinoPageScaffold _buildIos() {
@@ -35,13 +81,10 @@ class DetailRestaurant extends StatelessWidget {
             SliverFillRemaining(
               hasScrollBody: false,
               // fillOverscroll: true,
-              child: Column(
-                children: [
-                  _buildImage(),
-                  _body(),
-                ],
-              ),
-            )
+              child: _futureBuilder(),
+            ),
+            _setTitleItemSliver(),
+            _listReviewSliver(),
           ],
         ),
       ),
@@ -51,7 +94,6 @@ class DetailRestaurant extends StatelessWidget {
   Scaffold _buildAndroid() {
     return Scaffold(
       key: this._scaffoldKey,
-      resizeToAvoidBottomPadding: false,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -64,9 +106,10 @@ class DetailRestaurant extends StatelessWidget {
             ),
             SliverFillRemaining(
               hasScrollBody: false,
-              // fillOverscroll: true,
-              child: _body(),
-            )
+              child: _futureBuilder(),
+            ),
+            _setTitleItemSliver(),
+            _listReviewSliver(),
           ],
         ),
       ),
@@ -75,108 +118,120 @@ class DetailRestaurant extends StatelessWidget {
 
   Hero _buildImage() {
     return Hero(
-        tag: item.id,
-        child: ColorFiltered(
-            colorFilter: ColorFilter.mode(Colors.grey, BlendMode.multiply),
-            child: Image.network(
-              item.pictureId,
-              fit: BoxFit.cover,
-            )));
+      tag: widget.itemId.id,
+      child: _restaurantData.pictureId == null
+          ? Image.asset("images/food-store.png", fit: BoxFit.cover)
+          : ColorFiltered(
+              colorFilter: ColorFilter.mode(Colors.grey, BlendMode.multiply),
+              child: FadeInImage.assetNetwork(
+                fit: BoxFit.cover,
+                image: _restaurantData.getPictureLink(),
+                placeholder: "images/food-store.png",
+              ),
+            ),
+    );
   }
 
   Widget _body() {
-    return Container(
-      color: Colors.grey[50],
-      clipBehavior: Clip.none,
-      // padding: EdgeInsets.only(bottom: 150),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.name,
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w600),
-                    ),
-                    Row(
-                      children: [
-                        Image.asset(
-                          "images/baseline_grade_black_48dp.png",
-                          color: Colors.yellow,
-                          width: 28,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          item.rating.toString(),
-                          style: TextStyle(color: Colors.black, fontSize: 18),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                SizedBox(height: 6),
-                Text(
-                  item.city,
-                  style: TextStyle(
-                      color: colorPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 20),
-                _setTitleItem("Description"),
-                SizedBox(height: 6),
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      _restaurantData.name,
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .headline5
+                          .apply(fontWeightDelta: 2),
+                      softWrap: true,
+                    ), fit: FlexFit.loose,
                   ),
-                ),
-                SizedBox(height: 16),
-              ],
-            ),
+                  Row(
+                    children: [
+                      Image.asset(
+                        "images/baseline_grade_black_48dp.png",
+                        color: Colors.yellow,
+                        width: 28,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        _restaurantData.rating.toString(),
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .headline6,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              Text(
+                _restaurantData.city,
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .headline6
+                    .apply(color: colorPrimary),
+              ),
+              SizedBox(height: 20),
+              _setTitleItem("Description"),
+              SizedBox(height: 6),
+              Text(
+                _restaurantData.description,
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .caption
+                    .apply(fontSizeDelta: 3),
+              ),
+              SizedBox(height: 10),
+            ],
           ),
-          if (item.menus.foods.length > 0)
-            _setMenu(item.menus.foods, "Food Menus")
-          else
-            _setTitleItem("No Food Menus"),
-          SizedBox(height: 20),
-          if (item.menus.drinks.length > 0)
-            _setMenu(item.menus.drinks, "Drink Menus")
-          else
-            _setTitleItem("No Drink Menus"),
-          SizedBox(height: 20),
-        ],
-      ),
+        ),
+        if (_restaurantData.menus.foods.length > 0)
+          _setMenu(_restaurantData.menus.foods, "Food Menus")
+        else
+          _setTitleItem("No Food Menus"),
+        SizedBox(height: 20),
+        if (_restaurantData.menus.drinks.length > 0)
+          _setMenu(_restaurantData.menus.drinks, "Drink Menus")
+        else
+          _setTitleItem("No Drink Menus"),
+        SizedBox(height: 20),
+      ],
     );
   }
 
   Text _setTitleItem(String title) {
     return Text(
       title,
-      style: TextStyle(
-          color: colorAccentLight, fontSize: 20, fontWeight: FontWeight.w600),
+      style: Theme
+          .of(context)
+          .textTheme
+          .button
+          .apply(fontSizeDelta: 5, color: Colors.grey[400]),
     );
   }
 
   Widget _setMenu(List<TypeMenu> listItemMenu, String title) {
-    final sizePadding = 16.0;
-    final sizeFont = 16.0;
+    final sizePadding = 14.0;
+    final sizeFont = 14.0;
     final sizePrefix = 11.0;
     final sizeContainer = (sizePadding * 2) + sizeFont + sizePrefix;
     return Column(
@@ -190,7 +245,6 @@ class DetailRestaurant extends StatelessWidget {
         Container(
           height: sizeContainer.toDouble(),
           child: ListView(
-            // clipBehavior: Clip.antiAlias,
             padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
             scrollDirection: Axis.horizontal,
             children: listItemMenu.map((element) {
@@ -223,5 +277,84 @@ class DetailRestaurant extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _mainBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        if(!isAndroid) _buildImage(),
+        _body(),
+      ],);
+  }
+
+  Widget _listReviewSliver() {
+    // Text(_restaurantData.customerReviews[index].name),
+    return _restaurantData.customerReviews == null
+        ? SliverFillRemaining()
+        : SliverPadding(
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+                (context, index) =>
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8.0),
+                    onTap: () {},
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              text: 'Oleh ',
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .bodyText2,
+                              children: <TextSpan>[
+                                TextSpan(text: _restaurantData
+                                    .customerReviews[index].name,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: 2),
+                          Text(_restaurantData.customerReviews[index].date,
+                            style: Theme
+                                .of(context)
+                                .textTheme
+                                .caption,),
+                          SizedBox(height: 6),
+                          Text(_restaurantData.customerReviews[index].review,
+                            style: Theme
+                                .of(context)
+                                .textTheme
+                                .bodyText2,),
+
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            childCount: _restaurantData.customerReviews.length),
+      ), padding: EdgeInsets.only(bottom: 20),
+    );
+  }
+
+  Widget _setTitleItemSliver() {
+    return _restaurantData.customerReviews == null
+        ? SliverFillRemaining()
+        : SliverPadding(
+      sliver: SliverToBoxAdapter(child: _setTitleItem("Customer Review"),),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),);
   }
 }
