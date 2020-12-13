@@ -1,5 +1,5 @@
+import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class UnknownScreen extends StatelessWidget {
@@ -8,17 +8,13 @@ class UnknownScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return _buildAndroid();
-      case TargetPlatform.iOS:
-        return _buildIos();
-      default:
-        return _buildAndroid();
-    }
+    return PlatformWidget(
+      androidBuilder: _buildAndroid,
+      iosBuilder: _buildIos,
+    );
   }
 
-  CupertinoPageScaffold _buildIos() {
+  CupertinoPageScaffold _buildIos(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(titleAppBar),
@@ -27,7 +23,7 @@ class UnknownScreen extends StatelessWidget {
     );
   }
 
-  Scaffold _buildAndroid() {
+  Scaffold _buildAndroid(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(titleAppBar),

@@ -1,6 +1,7 @@
 import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/data/service/api_config.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
+import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,8 +21,7 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
   //
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Future<RestaurantDetail> _restaurantDetail;
-  Restaurant _restaurantData = Restaurant();
-  bool isAndroid = true;
+  Restaurant _restaurantData;
 
   @override
   void initState() {
@@ -36,16 +36,10 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
 
   @override
   Widget build(BuildContext context) {
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        isAndroid = false;
-        return _buildIos();
-      case TargetPlatform.iOS:
-        isAndroid = false;
-        return _buildIos();
-      default:
-        return _buildAndroid();
-    }
+    return PlatformWidget(
+      androidBuilder: _buildAndroid,
+      iosBuilder: _buildIos,
+    );
   }
 
   Widget _futureBuilder() {
@@ -70,7 +64,7 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
     );
   }
 
-  CupertinoPageScaffold _buildIos() {
+  CupertinoPageScaffold _buildIos(BuildContext context) {
     return CupertinoPageScaffold(
       child: SafeArea(
         child: CustomScrollView(
@@ -78,10 +72,13 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
             CupertinoSliverNavigationBar(
               largeTitle: Text('Restaurant'),
             ),
-            SliverFillRemaining(
+            _restaurantData == null
+                ? SliverFillRemaining(
               hasScrollBody: false,
-              // fillOverscroll: true,
               child: _futureBuilder(),
+            )
+                : SliverList(
+              delegate: SliverChildListDelegate([_futureBuilder()]),
             ),
             _setTitleItemSliver(),
             _listReviewSliver(),
@@ -91,7 +88,7 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
     );
   }
 
-  Scaffold _buildAndroid() {
+  Scaffold _buildAndroid(BuildContext context) {
     return Scaffold(
       key: this._scaffoldKey,
       body: SafeArea(
@@ -104,9 +101,13 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
                 background: _buildImage(),
               ),
             ),
-            SliverFillRemaining(
+            _restaurantData == null
+                ? SliverFillRemaining(
               hasScrollBody: false,
               child: _futureBuilder(),
+            )
+                : SliverList(
+              delegate: SliverChildListDelegate([_futureBuilder()]),
             ),
             _setTitleItemSliver(),
             _listReviewSliver(),
@@ -119,16 +120,16 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
   Hero _buildImage() {
     return Hero(
       tag: widget.itemId.id,
-      child: _restaurantData.pictureId == null
+      child: _restaurantData?.pictureId == null
           ? Image.asset("images/food-store.png", fit: BoxFit.cover)
           : ColorFiltered(
-              colorFilter: ColorFilter.mode(Colors.grey, BlendMode.multiply),
-              child: FadeInImage.assetNetwork(
-                fit: BoxFit.cover,
-                image: _restaurantData.getPictureLink(),
-                placeholder: "images/food-store.png",
-              ),
-            ),
+        colorFilter: ColorFilter.mode(Colors.grey, BlendMode.multiply),
+        child: FadeInImage.assetNetwork(
+          fit: BoxFit.cover,
+          image: _restaurantData.getPictureLink(),
+          placeholder: "images/food-store.png",
+        ),
+      ),
     );
   }
 
@@ -285,14 +286,13 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        if(!isAndroid) _buildImage(),
+        if (defaultTargetPlatform == TargetPlatform.iOS) _buildImage(),
         _body(),
       ],);
   }
 
   Widget _listReviewSliver() {
-    // Text(_restaurantData.customerReviews[index].name),
-    return _restaurantData.customerReviews == null
+    return _restaurantData?.customerReviews == null
         ? SliverFillRemaining()
         : SliverPadding(
       sliver: SliverList(
@@ -351,7 +351,7 @@ class _DetailRestaurantState extends State<DetailRestaurant> {
   }
 
   Widget _setTitleItemSliver() {
-    return _restaurantData.customerReviews == null
+    return _restaurantData?.customerReviews == null
         ? SliverFillRemaining()
         : SliverPadding(
       sliver: SliverToBoxAdapter(child: _setTitleItem("Customer Review"),),

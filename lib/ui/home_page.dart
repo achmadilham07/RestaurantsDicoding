@@ -1,12 +1,10 @@
-import 'dart:math';
-
 import 'package:RestaurantsDicoding/data/model/restaurant.dart';
-import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/data/service/api_config.dart';
-import 'package:RestaurantsDicoding/ui/detail_restaurant_screen.dart';
+import 'package:RestaurantsDicoding/ui/search_page_cupertino.dart';
+import 'package:RestaurantsDicoding/ui/search_page_material.dart';
 import 'package:RestaurantsDicoding/widget/card_restaurant.dart';
+import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -29,27 +27,21 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return _buildIos();
-      case TargetPlatform.iOS:
-        return _buildIos();
-      default:
-        return _buildAndroid();
-    }
+    return PlatformWidget(
+      androidBuilder: _buildAndroid,
+      iosBuilder: _buildIos,
+    );
   }
 
-  Widget _buildIos() {
+  Widget _buildIos(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text('Restaurant List App'),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () {
-            showSearch(
-                context: context,
-                delegate:
-                    SearchViewRestaurantList(_restaurantData.restaurants));
+            Navigator.pushNamed(context, SearchTab.routeName,
+                arguments: _restaurantData.restaurants);
           },
           child: Icon(CupertinoIcons.search),
         ),
@@ -58,7 +50,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Scaffold _buildAndroid() {
+  Scaffold _buildAndroid(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Restaurant List App"),
@@ -102,111 +94,5 @@ class _HomePageState extends State<HomePage> {
         return Center(child: CircularProgressIndicator());
       },
     );
-  }
-}
-
-class SearchViewRestaurantList extends SearchDelegate<String> {
-  //
-  final List<Restaurant> _restaurantList;
-
-  SearchViewRestaurantList(this._restaurantList);
-
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    return [
-      IconButton(
-          icon: Icon(Icons.clear),
-          onPressed: () {
-            query = "";
-            showSuggestions(context);
-          }),
-    ];
-  }
-
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: AnimatedIcon(
-        progress: transitionAnimation,
-        icon: AnimatedIcons.menu_arrow,
-      ),
-      onPressed: () {
-        close(context, null);
-      },
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    return FutureBuilder(
-      future: ApiConfig().searchRestaurant(query),
-      builder: (context, AsyncSnapshot<Restaurants> snapshot) {
-        if (snapshot.hasData) {
-          var _restaurantData = snapshot.data;
-          if (!_restaurantData.error) {
-            final restaurantList = _restaurantData.restaurants;
-            return restaurantList.isEmpty
-                ? Center(
-              child: Text("No Restaurant that you want"),
-            )
-                : ListView.builder(
-              itemCount: restaurantList.length,
-              itemBuilder: (context, index) {
-                return Material(
-                    child: RestaurantCard(item: restaurantList[index]));
-              },
-            );
-          } else {
-            Center(child: Text("No Restaurant that you want"));
-          }
-        } else if (snapshot.hasError) {
-          return Center(child: Text("${snapshot.error}"));
-        }
-        return Center(child: CircularProgressIndicator());
-      },
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    var recentList = randomRestaurant();
-    final suggessionList = query.isEmpty
-        ? recentList
-        : _restaurantList
-        .where((element) =>
-        element.name.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-    return ListView.builder(
-      itemCount: suggessionList.length,
-      itemBuilder: (context, index) =>
-          ListTile(
-            leading: Icon(Icons.restaurant),
-            title: Text(suggessionList
-                .elementAt(index)
-                .name),
-            onTap: () {
-              Navigator.pushNamed(context, DetailRestaurant.routeName,
-                  arguments: suggessionList.elementAt(index));
-            },
-          ),
-    );
-  }
-
-  List<Restaurant> randomRestaurant() {
-    List<Restaurant> temp = [];
-    var rng = new Random();
-    List<int> indexList = [rng.nextInt(_restaurantList.length)];
-    while (indexList.length < 6) {
-      int index = rng.nextInt(_restaurantList.length - 1);
-      if (!indexList.contains(index)) {
-        indexList.add(index);
-      }
-    }
-
-    indexList.forEach((i) {
-      temp.add(_restaurantList.elementAt(i));
-    });
-
-    return temp;
   }
 }

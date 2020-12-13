@@ -1,8 +1,8 @@
 import 'package:RestaurantsDicoding/ui/splash_screen.dart';
 import 'package:RestaurantsDicoding/utils/router.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
+import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -14,17 +14,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return _buildAndroid();
-      case TargetPlatform.iOS:
-        return _buildIos();
-      default:
-        return _buildAndroid();
-    }
+    return PlatformWidget(
+      androidBuilder: _buildAndroid,
+      iosBuilder: _buildIos,
+    );
   }
 
-  MaterialApp _buildAndroid() {
+  MaterialApp _buildAndroid(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       onGenerateRoute: generateRoute,
@@ -38,7 +34,7 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  CupertinoApp _buildIos() {
+  CupertinoApp _buildIos(BuildContext context) {
     return CupertinoApp(
       debugShowCheckedModeBanner: false,
       onGenerateRoute: generateRoute,
