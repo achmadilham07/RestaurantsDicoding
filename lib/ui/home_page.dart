@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
   static const routeName = '/home';
+  var _key = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +41,7 @@ class HomePage extends StatelessWidget {
 
   Scaffold _buildAndroid(BuildContext context) {
     return Scaffold(
+      key: _key,
       appBar: AppBar(
         title: Text("Restaurant List App"),
         actions: [
@@ -66,7 +68,7 @@ class HomePage extends StatelessWidget {
 
   Widget _buildFutureBuilder(BuildContext context) {
     return Consumer<RestaurantProvider>(
-      builder: (context, provider, child) {
+      builder: (_context, provider, child) {
         switch (provider.state) {
           case ResultState.Loading:
             return Center(child: CircularProgressIndicator());
@@ -88,26 +90,26 @@ class HomePage extends StatelessWidget {
         }
       },
     );
-    var provider = Provider.of<RestaurantProvider>(context);
-    switch (provider.state) {
-      case ResultState.Loading:
-        return Center(child: CircularProgressIndicator());
-      case ResultState.HasData:
-        return ListView.builder(
-          itemCount: provider.restaurants.restaurants.length,
-          itemBuilder: (context, index) {
-            return Material(
-                child: RestaurantCard(
-                    item: provider.restaurants.restaurants[index]));
-          },
-        );
-      case ResultState.NoData:
-        return _errorMessage(context, provider.message);
-      case ResultState.Error:
-        return _errorMessage(context, provider.failureNetwork.toString());
-      default:
-        return _errorMessage(context, "");
-    }
+    // var provider = Provider.of<RestaurantProvider>(context);
+    // switch (provider.state) {
+    //   case ResultState.Loading:
+    //     return Center(child: CircularProgressIndicator());
+    //   case ResultState.HasData:
+    //     return ListView.builder(
+    //       itemCount: provider.restaurants.restaurants.length,
+    //       itemBuilder: (context, index) {
+    //         return Material(
+    //             child: RestaurantCard(
+    //                 item: provider.restaurants.restaurants[index]));
+    //       },
+    //     );
+    //   case ResultState.NoData:
+    //     return _errorMessage(context, provider.message);
+    //   case ResultState.Error:
+    //     return _errorMessage(context, provider.failureNetwork.toString());
+    //   default:
+    //     return _errorMessage(context, "");
+    // }
   }
 
   Widget _errorMessage(BuildContext context, String message) => Center(
@@ -117,12 +119,15 @@ class HomePage extends StatelessWidget {
           mainAxisSize: MainAxisSize.max,
           children: [
             Text(message),
-            RaisedButton(
-              onPressed: () async {
-                Provider.of<RestaurantProvider>(context, listen: false)
-                    .fetchAllRestaurant();
+            Consumer<RestaurantProvider>(
+              builder: (context, state, _) {
+                return RaisedButton(
+                  child: Text('Get Post'),
+                  onPressed: () {
+                    state.fetchAllRestaurant();
+                  },
+                );
               },
-              child: Text("Retry"),
             ),
           ],
         ),

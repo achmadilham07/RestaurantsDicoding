@@ -14,7 +14,7 @@ class ApiConfig {
     try {
       final response = await http.get(_baseUrl + "list");
       if (response.statusCode == 200) {
-        throw SocketException('No Internet Connection');
+        // throw SocketException('No Internet Connection');
         return restaurantFromJson(response.body);
       }
     } on SocketException {
