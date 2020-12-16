@@ -18,12 +18,29 @@ class SearchBar extends StatelessWidget {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-            child: CupertinoTextField(
-              placeholder: "Search",
-              controller: controller,
-              focusNode: focusNode,
-              style: Styles.searchText,
-              cursorColor: Styles.searchCursorColor,
+            child: Form(
+              child: CupertinoTextField(
+                decoration: BoxDecoration(
+                  color: Styles.searchBackground,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefix: Row(
+                  children: [
+                    SizedBox(width: 8),
+                    Icon(
+                      CupertinoIcons.search,
+                      color: Styles.searchCursorColor,
+                    ),
+                  ],
+                ),
+                placeholder: "Search",
+                controller: controller,
+                focusNode: focusNode,
+                style: Styles.searchText,
+                placeholderStyle: Styles.searchText
+                    .copyWith(color: Color.fromRGBO(0, 0, 0, 0.2)),
+                cursorColor: Styles.searchCursorColor,
+              ),
             ),
           ),
         ),

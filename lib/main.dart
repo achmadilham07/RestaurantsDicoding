@@ -1,11 +1,17 @@
+import 'dart:io';
+
+import 'package:RestaurantsDicoding/provider/restaurant_provider.dart';
 import 'package:RestaurantsDicoding/ui/splash_screen.dart';
+import 'package:RestaurantsDicoding/utils/http_override.dart';
 import 'package:RestaurantsDicoding/utils/router.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
 import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
+  HttpOverrides.global = new MyHttpOverrides();
   runApp(MyApp());
 }
 
@@ -14,9 +20,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PlatformWidget(
-      androidBuilder: _buildAndroid,
-      iosBuilder: _buildIos,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<RestaurantProvider>(
+            create: (_) => RestaurantProvider()),
+      ],
+      child: PlatformWidget(
+        androidBuilder: _buildAndroid,
+        iosBuilder: _buildIos,
+      ),
     );
   }
 

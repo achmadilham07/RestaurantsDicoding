@@ -1,16 +1,15 @@
-import 'package:RestaurantsDicoding/data/model/restaurant.dart';
 import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
-import 'package:RestaurantsDicoding/data/service/api_config.dart';
-import 'package:RestaurantsDicoding/ui/detail_restaurant_screen.dart';
+import 'package:RestaurantsDicoding/provider/restaurant_provider.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
-import 'package:RestaurantsDicoding/widget/card_restaurant.dart';
+import 'package:RestaurantsDicoding/widget/search_result_list.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SearchViewRestaurantList extends SearchDelegate<String> {
   //
-  final List<Restaurant> _restaurantList;
+  final List<Restaurant> restaurantList;
 
-  SearchViewRestaurantList(this._restaurantList);
+  SearchViewRestaurantList({@required this.restaurantList});
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -39,54 +38,35 @@ class SearchViewRestaurantList extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return FutureBuilder(
-      future: ApiConfig().searchRestaurant(query),
-      builder: (context, AsyncSnapshot<Restaurants> snapshot) {
-        if (snapshot.hasData) {
-          var _restaurantData = snapshot.data;
-          if (!_restaurantData.error) {
-            final restaurantList = _restaurantData.restaurants;
-            return restaurantList.isEmpty
-                ? Center(
-                    child: Text("No Restaurant that you want"),
-                  )
-                : ListView.builder(
-                    itemCount: restaurantList.length,
-                    itemBuilder: (context, index) {
-                      return Material(
-                          child: RestaurantCard(item: restaurantList[index]));
-                    },
-                  );
-          } else {
-            Center(child: Text("No Restaurant that you want"));
-          }
-        } else if (snapshot.hasError) {
-          return Center(child: Text("${snapshot.error}"));
-        }
-        return Center(child: CircularProgressIndicator());
-      },
-    );
+    return _resultList(context);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    var recentList = randomRestaurant(_restaurantList);
-    final suggessionList = query.isEmpty
-        ? recentList
-        : _restaurantList
-            .where((element) =>
-                element.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-    return ListView.builder(
-      itemCount: suggessionList.length,
-      itemBuilder: (context, index) => ListTile(
-        leading: Icon(Icons.restaurant),
-        title: Text(suggessionList.elementAt(index).name),
-        onTap: () {
-          Navigator.pushNamed(context, DetailRestaurant.routeName,
-              arguments: suggessionList.elementAt(index));
-        },
-      ),
+    return _resultList(context);
+  }
+
+  Widget _resultList(BuildContext context) {
+    Provider.of<RestaurantProvider>(context, listen: false)
+        .fetchSearchRestaurant(query);
+    return Consumer<RestaurantProvider>(
+      builder: (context, state, widget) {
+        switch (state.state) {
+          case ResultState.Loading:
+            return Center(child: CircularProgressIndicator());
+          case ResultState.HasData:
+            List<Restaurant> listRestaurant = query.isEmpty
+                ? randomRestaurant(restaurantList)
+                : state.listRestaurant;
+            return SearchResultListView(suggessionList: listRestaurant);
+          case ResultState.NoData:
+            return Center(child: Text(state.message));
+          case ResultState.Error:
+            return Center(child: Text(state.message));
+          default:
+            return Center(child: Text(''));
+        }
+      },
     );
   }
 }
