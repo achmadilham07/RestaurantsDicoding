@@ -13,16 +13,16 @@ Route generateRoute(settings) {
   switch (settings.name) {
     case SplashScreen.routeName:
       return MaterialPageRoute(
-        builder: (context) => ChangeNotifierProvider.value(
+        builder: (context) => ChangeNotifierProvider<RestaurantProvider>.value(
             value: RestaurantProvider(), child: SplashScreen()),
       );
     case HomePage.routeName:
       return MaterialPageRoute(
         builder: (context) =>
-            ChangeNotifierProvider.value(
-                value: RestaurantProvider(),
-                child: HomePage()
-            ),
+        ChangeNotifierProvider<RestaurantProvider>.value(
+            value: RestaurantProvider(),
+            child: HomePage()
+        ),
       );
     case SearchTab.routeName:
       if (args is List<Restaurant>) {

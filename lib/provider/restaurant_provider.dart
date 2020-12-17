@@ -30,6 +30,11 @@ class RestaurantProvider extends ChangeNotifier {
 
   ResultState get state => _state;
 
+  void setState(ResultState _s) {
+    print("la");
+    _state = _s;
+  }
+
   List<Restaurant> get listRestaurant => _listRestaurant;
 
   void fetchAllRestaurant() => _fetchAllRestaurant();
