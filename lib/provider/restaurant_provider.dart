@@ -1,8 +1,7 @@
+import 'package:RestaurantsDicoding/data/model/failure_network.dart';
 import 'package:RestaurantsDicoding/data/model/restaurant.dart';
 import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/data/service/api_config.dart';
-import 'package:RestaurantsDicoding/data/service/exception_network.dart';
-import 'package:RestaurantsDicoding/provider/failure_network.dart';
 import 'package:flutter/cupertino.dart';
 
 enum ResultState { Loading, NoData, HasData, Error }
@@ -34,11 +33,11 @@ class RestaurantProvider extends ChangeNotifier {
 
   void fetchAllRestaurant() => _fetchAllRestaurant();
 
+  Future<dynamic> fetchAllRestaurant2() => _fetchAllRestaurant();
+
   void fetchRestaurant(String id) => _fetchDetailRestaurant(id);
 
   void fetchSearchRestaurant(String query) => _fetchSearchRestaurant(query);
-
-  FailureNetwork get failureNetwork => _failureNetwork;
 
   //
   Future<dynamic> _fetchAllRestaurant() async {
@@ -58,7 +57,8 @@ class RestaurantProvider extends ChangeNotifier {
     } on FailureNetwork catch (e) {
       _state = ResultState.Error;
       notifyListeners();
-      return _failureNetwork = e;
+      _failureNetwork = e;
+      return _message = _failureNetwork.toString();
     }
   }
 
@@ -76,11 +76,11 @@ class RestaurantProvider extends ChangeNotifier {
         notifyListeners();
         return _restaurant = restaurant.restaurant;
       }
-    } catch (e) {
+    } on FailureNetwork catch (e) {
       _state = ResultState.Error;
       notifyListeners();
-
-      return _message = returnMessageException(e);
+      _failureNetwork = e;
+      return _message = _failureNetwork.toString();
     }
   }
 
@@ -99,15 +99,15 @@ class RestaurantProvider extends ChangeNotifier {
 
         return _listRestaurant = restaurant.restaurants;
       }
-    } catch (e) {
+    } on FailureNetwork catch (e) {
       _state = ResultState.Error;
       notifyListeners();
-      return _message = returnMessageException(e);
+      _failureNetwork = e;
+      return _message = _failureNetwork.toString();
     }
   }
 
   void _setResultStateLoading() {
     _state = ResultState.Loading;
-    // notifyListeners();
   }
 }

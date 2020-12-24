@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:RestaurantsDicoding/data/model/failure_network.dart';
 import 'package:RestaurantsDicoding/data/model/restaurant.dart';
 import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/data/model/restaurant_new_review.dart';
-import 'package:RestaurantsDicoding/provider/failure_network.dart';
 import 'package:http/http.dart' as http;
 
 class ApiConfig {
@@ -14,8 +14,9 @@ class ApiConfig {
     try {
       final response = await http.get(_baseUrl + "list");
       if (response.statusCode == 200) {
-        throw SocketException('No Internet Connection');
         return restaurantFromJson(response.body);
+      } else {
+        throw FailureNetwork('Failed to load');
       }
     } on SocketException {
       throw FailureNetwork('No Internet Connection');
@@ -27,20 +28,36 @@ class ApiConfig {
   }
 
   Future<Restaurants> searchRestaurant(String query) async {
-    final response = await http.get(_baseUrl + "search?q=$query");
-    if (response.statusCode == 200) {
-      return restaurantFromJson(response.body);
-    } else {
-      throw Exception('Failed to load');
+    try {
+      final response = await http.get(_baseUrl + "search?q=$query");
+      if (response.statusCode == 200) {
+        return restaurantFromJson(response.body);
+      } else {
+        throw FailureNetwork('Failed to load');
+      }
+    } on SocketException {
+      throw FailureNetwork('No Internet Connection');
+    } on HttpException {
+      throw FailureNetwork("Couldn't find the post");
+    } on FormatException {
+      throw FailureNetwork("Bad response format");
     }
   }
 
   Future<RestaurantDetail> getDetailRestaurant(String id) async {
-    final response = await http.get(_baseUrl + "detail/$id");
-    if (response.statusCode == 200) {
-      return restaurantDetailFromJson(response.body);
-    } else {
-      throw Exception('Failed to load');
+    try {
+      final response = await http.get(_baseUrl + "detail/$id");
+      if (response.statusCode == 200) {
+        return restaurantDetailFromJson(response.body);
+      } else {
+        throw FailureNetwork('Failed to load');
+      }
+    } on SocketException {
+      throw FailureNetwork('No Internet Connection');
+    } on HttpException {
+      throw FailureNetwork("Couldn't find the post");
+    } on FormatException {
+      throw FailureNetwork("Bad response format");
     }
   }
 

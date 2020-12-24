@@ -65,29 +65,6 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildFutureBuilder(BuildContext context) {
-    return Consumer<RestaurantProvider>(
-      builder: (context, provider, child) {
-        switch (provider.state) {
-          case ResultState.Loading:
-            return Center(child: CircularProgressIndicator());
-          case ResultState.HasData:
-            return ListView.builder(
-              itemCount: provider.restaurants.restaurants.length,
-              itemBuilder: (context, index) {
-                return Material(
-                    child: RestaurantCard(
-                        item: provider.restaurants.restaurants[index]));
-              },
-            );
-          case ResultState.NoData:
-            return _errorMessage(context, provider.message);
-          case ResultState.Error:
-            return _errorMessage(context, provider.failureNetwork.toString());
-          default:
-            return _errorMessage(context, "");
-        }
-      },
-    );
     var provider = Provider.of<RestaurantProvider>(context);
     switch (provider.state) {
       case ResultState.Loading:
@@ -102,29 +79,11 @@ class HomePage extends StatelessWidget {
           },
         );
       case ResultState.NoData:
-        return _errorMessage(context, provider.message);
+        return Center(child: Text(provider.message));
       case ResultState.Error:
-        return _errorMessage(context, provider.failureNetwork.toString());
+        return Center(child: Text(provider.message));
       default:
-        return _errorMessage(context, "");
+        return Center(child: Text(''));
     }
   }
-
-  Widget _errorMessage(BuildContext context, String message) => Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Text(message),
-            RaisedButton(
-              onPressed: () async {
-                Provider.of<RestaurantProvider>(context, listen: false)
-                    .fetchAllRestaurant();
-              },
-              child: Text("Retry"),
-            ),
-          ],
-        ),
-      );
 }
