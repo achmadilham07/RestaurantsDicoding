@@ -142,11 +142,7 @@ class DetailRestaurant extends StatelessWidget {
                   Flexible(
                     child: Text(
                       _restaurantData.name,
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .headline5
-                          .apply(
+                      style: Theme.of(context).textTheme.headline5.apply(
                           fontWeightDelta: 2,
                           color: isAndroidPlatform()
                               ? Colors.black54
