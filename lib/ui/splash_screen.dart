@@ -1,7 +1,9 @@
+import 'package:RestaurantsDicoding/provider/preference_provider.dart';
+import 'package:RestaurantsDicoding/ui/main_page.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 var _width = 0.0;
 
@@ -13,8 +15,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final isAndroid =
-      defaultTargetPlatform == TargetPlatform.android ? true : false;
+  bool isAndroid;
 
   @override
   void initState() {
@@ -25,12 +26,14 @@ class _SplashScreenState extends State<SplashScreen> {
   _startTime() {
     var duration = new Duration(seconds: 5);
     Future.delayed(duration, () {
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, MainPage.routeName);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    isAndroid = Provider.of<PreferencesProvider>(context, listen: false)
+        .isAndroidActive;
     var mediaQuery = MediaQuery.of(context);
     var useMobileLayout = mediaQuery.size.shortestSide;
     _width = mediaQuery.size.width * 2 / 3;
@@ -50,11 +53,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget _potraitView() {
     return isAndroid
         ? Scaffold(
-            body: _bodyPotrait(),
-          )
+      body: _bodyPotrait(),
+    )
         : CupertinoPageScaffold(
-            child: _bodyPotrait(),
-          );
+      child: _bodyPotrait(),
+    );
   }
 
   Container _bodyPotrait() {
@@ -77,11 +80,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget _landscapeView() {
     return isAndroid
         ? Scaffold(
-            body: _bodyLanscape(),
-          )
+      body: _bodyLanscape(),
+    )
         : CupertinoPageScaffold(
-            child: _bodyLanscape(),
-          );
+      child: _bodyLanscape(),
+    );
   }
 
   Container _bodyLanscape() {

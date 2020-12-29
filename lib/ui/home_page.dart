@@ -2,6 +2,7 @@ import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/provider/restaurant_provider.dart';
 import 'package:RestaurantsDicoding/ui/search_page_cupertino.dart';
 import 'package:RestaurantsDicoding/ui/search_page_material.dart';
+import 'package:RestaurantsDicoding/utils/result_state.dart';
 import 'package:RestaurantsDicoding/widget/card_restaurant.dart';
 import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';

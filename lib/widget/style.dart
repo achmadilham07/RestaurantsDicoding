@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
 
 abstract class Styles {
-
   static const TextStyle searchText = TextStyle(
     color: Color.fromRGBO(0, 0, 0, 1),
     fontSize: 18,

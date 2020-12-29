@@ -10,6 +10,13 @@ RestaurantDetail restaurantDetailFromJson(String str) =>
 String restaurantDetailToJson(RestaurantDetail data) =>
     json.encode(data.toJson());
 
+Restaurant restoFromJson(String str) => Restaurant.fromJson(json.decode(str));
+
+String restoToJson(Restaurant data) {
+  var string = json.encode(data.toJson());
+  return string;
+}
+
 class RestaurantDetail {
   RestaurantDetail({
     this.error,

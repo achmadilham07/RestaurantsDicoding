@@ -1,5 +1,9 @@
 import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
+import 'package:RestaurantsDicoding/provider/db_provider.dart';
+import 'package:RestaurantsDicoding/provider/preference_provider.dart';
 import 'package:RestaurantsDicoding/provider/restaurant_provider.dart';
+import 'package:RestaurantsDicoding/ui/new_comment.dart';
+import 'package:RestaurantsDicoding/utils/result_state.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
 import 'package:RestaurantsDicoding/widget/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,16 +12,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-class DetailRestaurant extends StatelessWidget {
+class DetailRestaurant extends StatefulWidget {
   static const routeName = '/detail_restaurant';
   final Restaurant itemId;
 
   DetailRestaurant({Key key, this.itemId}) : super(key: key);
 
   @override
+  _DetailRestaurantState createState() => _DetailRestaurantState();
+}
+
+class _DetailRestaurantState extends State<DetailRestaurant> {
+  @override
   Widget build(BuildContext context) {
-    var provider = Provider.of<RestaurantProvider>(context, listen: false);
-    provider.fetchRestaurant(itemId.id);
     return PlatformWidget(
       androidBuilder: _buildAndroid,
       iosBuilder: _buildIos,
@@ -36,14 +43,14 @@ class DetailRestaurant extends StatelessWidget {
     );
   }
 
-  Widget _fetchData() {
+  Widget _body() {
+    //_fetchData();
     return Consumer<RestaurantProvider>(
       builder: (context, provider, widget) {
         switch (provider.state) {
           case ResultState.Loading:
             return Center(child: CircularProgressIndicator());
           case ResultState.HasData:
-            //_restaurantData = provider.restaurant;
             return _buildFullBody(context);
           case ResultState.NoData:
             return Center(child: Text(provider.message));
@@ -56,9 +63,31 @@ class DetailRestaurant extends StatelessWidget {
     );
   }
 
+  _addFavorite(context) async {
+    var _restaurantData =
+        Provider.of<RestaurantProvider>(context, listen: false).restaurant;
+    var providerDb = Provider.of<DbProvider>(context, listen: false);
+
+    if (!providerDb.isFavoriteItem) {
+      providerDb.addFavorite(_restaurantData);
+    } else {
+      providerDb.removeFavorite(widget.itemId.id);
+    }
+  }
+
   Widget _buildFullBody(BuildContext context) {
-    var _restaurantData = Provider.of<RestaurantProvider>(context).restaurant;
-    return isAndroidPlatform()
+    var providerDb = Provider.of<DbProvider>(context, listen: false);
+    Restaurant _restaurantData;
+    if (providerDb.isFavoriteItem) {
+      _restaurantData = providerDb.restaurant;
+      Provider.of<RestaurantProvider>(context).setRestaurant(_restaurantData);
+      print("from database");
+    } else {
+      _restaurantData = Provider.of<RestaurantProvider>(context).restaurant;
+      print("from internet");
+    }
+
+    return _isAndroidPlatform()
         ? CustomScrollView(
             slivers: [
               SliverAppBar(
@@ -67,56 +96,88 @@ class DetailRestaurant extends StatelessWidget {
                 flexibleSpace: FlexibleSpaceBar(
                   background: _buildImage(context),
                 ),
+                actions: [
+                  Consumer<DbProvider>(
+                    builder: (context, provider, child) {
+                      return IconButton(
+                        tooltip: "Favorite",
+                        icon: Icon(provider.isFavoriteItem
+                            ? Icons.favorite
+                            : Icons.favorite_border),
+                        onPressed: () {
+                          _addFavorite(context);
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
-              _restaurantData == null
-                  ? SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _mainBody(context),
-                    )
-                  : SliverList(
-                      delegate: SliverChildListDelegate([_mainBody(context)]),
-                    ),
-              _setTitleItemSliver(context),
-              _listReviewSliver(context),
-            ],
-          )
+        _restaurantData == null
+            ? SliverFillRemaining(
+          hasScrollBody: false,
+          child: _mainBody(context),
+        )
+            : SliverList(
+          delegate: SliverChildListDelegate([_mainBody(context)]),
+        ),
+        _setTitleItemSliver(context),
+        _listReviewSliver(context),
+      ],
+    )
         : CustomScrollView(
-            slivers: [
-              CupertinoSliverNavigationBar(
-                largeTitle: Text('Restaurant'),
-              ),
-              _restaurantData == null
-                  ? SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _mainBody(context),
-                    )
-                  : SliverList(
-                      delegate: SliverChildListDelegate([_mainBody(context)]),
-                    ),
-              _setTitleItemSliver(context),
-              _listReviewSliver(context),
-            ],
-          );
+      slivers: [
+        CupertinoSliverNavigationBar(
+          largeTitle: Text('Restaurant'),
+          trailing: Consumer<DbProvider>(
+            builder: (context, provider, child) {
+              return CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  _addFavorite(context);
+                },
+                child: Icon(provider.isFavoriteItem
+                    ? CupertinoIcons.square_favorites_alt_fill
+                    : CupertinoIcons.square_favorites_alt),
+              );
+            },
+          ),
+        ),
+        _restaurantData == null
+            ? SliverFillRemaining(
+          hasScrollBody: false,
+          child: _mainBody(context),
+        )
+            : SliverList(
+          delegate: SliverChildListDelegate([_mainBody(context)]),
+        ),
+        _setTitleItemSliver(context),
+        _listReviewSliver(context),
+      ],
+    );
   }
 
-  bool isAndroidPlatform() {
-    return defaultTargetPlatform == TargetPlatform.android;
+  bool _isAndroidPlatform() {
+    return Provider
+        .of<PreferencesProvider>(context, listen: false)
+        .isAndroidActive;
   }
 
   Hero _buildImage(BuildContext context) {
-    var _restaurantData = Provider.of<RestaurantProvider>(context).restaurant;
+    var _restaurantData = Provider
+        .of<RestaurantProvider>(context)
+        .restaurant;
     return Hero(
-      tag: itemId.id,
+      tag: widget.itemId.id,
       child: _restaurantData?.pictureId == null
           ? Image.asset("images/food-store.png", fit: BoxFit.cover)
           : ColorFiltered(
-              colorFilter: ColorFilter.mode(Colors.grey, BlendMode.multiply),
-              child: FadeInImage.assetNetwork(
-                fit: BoxFit.cover,
-                image: _restaurantData.getPictureLink(),
-                placeholder: "images/food-store.png",
-              ),
-            ),
+        colorFilter: ColorFilter.mode(Colors.grey, BlendMode.multiply),
+        child: FadeInImage.assetNetwork(
+          fit: BoxFit.cover,
+          image: _restaurantData.getPictureLink(),
+          placeholder: "images/food-store.png",
+        ),
+      ),
     );
   }
 
@@ -144,7 +205,7 @@ class DetailRestaurant extends StatelessWidget {
                       _restaurantData.name,
                       style: Theme.of(context).textTheme.headline5.apply(
                           fontWeightDelta: 2,
-                          color: isAndroidPlatform()
+                          color: _isAndroidPlatform()
                               ? Colors.black54
                               : Colors.black26),
                       softWrap: true,
@@ -155,7 +216,7 @@ class DetailRestaurant extends StatelessWidget {
                     children: [
                       Image.asset(
                         "images/baseline_grade_black_48dp.png",
-                        color: isAndroidPlatform()
+                        color: _isAndroidPlatform()
                             ? Colors.yellow[600]
                             : Colors.yellow,
                         width: 28,
@@ -168,7 +229,7 @@ class DetailRestaurant extends StatelessWidget {
                             .textTheme
                             .headline6
                             .apply(
-                            color: isAndroidPlatform()
+                            color: _isAndroidPlatform()
                                 ? Colors.black54
                                 : Colors.black26),
                       ),
@@ -282,7 +343,7 @@ class DetailRestaurant extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        if (!isAndroidPlatform()) _buildImage(context),
+        if (!_isAndroidPlatform()) _buildImage(context),
         _buildBodyText(context),
       ],
     );
@@ -373,12 +434,11 @@ class DetailRestaurant extends StatelessWidget {
             FlatButton.icon(
               textColor: colorPrimary,
               onPressed: () {
-                //print(_restaurantData.id);
-                // Navigator.pushNamed(context, );
-                _showDialog(context);
+                Navigator.of(context).pushNamed(NewReview.routeName,
+                    arguments: widget.itemId.id);
               },
               icon: Icon(
-                isAndroidPlatform() ? Icons.create : CupertinoIcons.add,
+                _isAndroidPlatform() ? Icons.create : CupertinoIcons.add,
               ),
               label: Text("New Comment"),
               padding: EdgeInsets.zero,
@@ -390,45 +450,28 @@ class DetailRestaurant extends StatelessWidget {
     );
   }
 
-  Future<void> _showDialog(BuildContext context) {
-    var _action = [
-      TextButton(
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-        child: Text("Ok"),
-      ),
-    ];
-    var _title = Text('Coming Soon');
-    var _content = SingleChildScrollView(
-      child: ListBody(
-        children: [
-          Text('This feature will coming up soon'),
-          Text('So stay tune..'),
-        ],
-      ),
-    );
-    return isAndroidPlatform()
-        ? showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: _title,
-          content: _content,
-          actions: _action,
-        );
-      },
-    )
-        : showCupertinoDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: _title,
-          content: _content,
-          actions: _action,
-        );
+  Widget _fetchData() {
+    var provider = Provider.of<DbProvider>(context, listen: false);
+    return FutureBuilder<bool>(
+      future: provider.isFavorite(widget.itemId.id),
+      builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text("Error"),
+          );
+        } else if (snapshot.hasData) {
+          bool isFav = snapshot.data;
+          if (isFav) {
+            print("get from database");
+          } else {
+            var provider =
+            Provider.of<RestaurantProvider>(context, listen: false);
+            provider.fetchRestaurant(widget.itemId.id);
+            print("get from internet");
+          }
+          return _body();
+        }
+        return CircularProgressIndicator();
       },
     );
   }

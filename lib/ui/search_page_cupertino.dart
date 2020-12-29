@@ -1,5 +1,6 @@
 import 'package:RestaurantsDicoding/data/model/restaurant_detail.dart';
 import 'package:RestaurantsDicoding/provider/restaurant_provider.dart';
+import 'package:RestaurantsDicoding/utils/result_state.dart';
 import 'package:RestaurantsDicoding/utils/static_value.dart';
 import 'package:RestaurantsDicoding/widget/search_bar_cupertino.dart';
 import 'package:RestaurantsDicoding/widget/search_result_list.dart';
@@ -121,4 +122,3 @@ class _SearchTabState extends State<SearchTab> {
     );
   }
 }
-
